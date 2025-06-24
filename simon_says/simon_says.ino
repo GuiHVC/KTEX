@@ -39,10 +39,11 @@ void setup() {
   }
 
   for (int i = 0; i < 4; i++) {
-    pinMode(buttonPins[i], INPUT_PULLUP);
+    pinMode(buttonPins[i], INPUT);
   }
 
   randomSeed(analogRead(A0));
+  Serial.begin(9600);
   
   //pinMode(BUZZER_PIN, OUTPUT);
 }
@@ -50,7 +51,9 @@ void setup() {
 void loop() {
   switch (gameState) {
     case START_GAME:
+    Serial.println("Starto?");
       if (isAnyButtonPressed()) {
+        Serial.println("Ovoem");
         delay(500);
         newGame();
       }
@@ -117,8 +120,10 @@ void showSequence() {
 }
 
 int readPlayerInput() {
+  Serial.println("toleno");
   for (int i = 0; i < 4; i++) {
-    if (digitalRead(buttonPins[i]) == LOW) {
+    if (digitalRead(buttonPins[i]) == HIGH) {
+      Serial.println("opa achei");
       return i;
     }
   }
@@ -140,7 +145,7 @@ void gameOver() {
 
 void lightUp(int colorIndex, int duration) {
   digitalWrite(ledPins[colorIndex], HIGH);
-  tone(BUZZER_PIN, tones[colorIndex], duration);
+  //tone(BUZZER_PIN, tones[colorIndex], duration);
   delay(duration);
   digitalWrite(ledPins[colorIndex], LOW);
 }
