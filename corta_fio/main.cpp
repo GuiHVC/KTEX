@@ -88,7 +88,12 @@ const int blueMorseLength = sizeof(blueMorse) / sizeof(MorseElement);
 int morseIndex = 0;
 unsigned long lastMorseTime = 0;
 bool morseActive = true;
-int ledPin = A5;
+bool gameOn = true;
+int morsePin = A5;
+
+const int win_pin = A0;
+const int lose_pin = 7;
+const int reset_pin = 3;
 
 const int red_wire = 13;
 const int green_wire = 11;
@@ -117,11 +122,11 @@ void handleMorse() {
 
   if (millis() - previousMillis >= sequence[index].duration) {
     previousMillis = millis();
-    digitalWrite(ledPin, sequence[index].isHigh ? HIGH : LOW);
+    digitalWrite(morsePin, sequence[index].isHigh ? HIGH : LOW);
     index++;
     if (index >= length) {
       index = 0;
-      digitalWrite(ledPin, LOW);
+      digitalWrite(morsePin, LOW);
     }
   }
 }
@@ -134,37 +139,53 @@ void pickRandomWire(){
 
 void setup() {
   randomSeed(analogRead(2)); 
-
+  Serial.begin(9600);
   pinMode(red_wire, INPUT);
   pinMode(green_wire, INPUT);
   pinMode(blue_wire, INPUT);
-  pinMode(7, OUTPUT);
-  pinMode(A0, OUTPUT);
-  pinMode(A5, OUTPUT);
+  pinMode(reset_pin, INPUT);
+  pinMode(lose_pin, OUTPUT);
+  pinMode(win_pin, OUTPUT);
+  pinMode(morsePin, OUTPUT);
   pickRandomWire();
 }
 
 void loop() {
-  handleMorse();
-  int sensor_red = digitalRead(red_wire);
-  int sensor_green = digitalRead(green_wire);
-  int sensor_blue = digitalRead(blue_wire);
+  if(gameOn == true){  
+    handleMorse();
+    int sensor_red = digitalRead(red_wire);
+    int sensor_green = digitalRead(green_wire);
+    int sensor_blue = digitalRead(blue_wire);
 
-  if (sensor_red == LOW){
-    if(correct_wire == red_wire) digitalWrite(A0, HIGH);
-    else digitalWrite(7, HIGH);
+    if (sensor_red == LOW){
+      if(correct_wire == red_wire) digitalWrite(win_pin, HIGH);
+      else digitalWrite(lose_pin, HIGH);
+      gameOn = false;
+    }
+    else if (sensor_green == LOW){
+      if(correct_wire == green_wire) digitalWrite(win_pin, HIGH);
+      else digitalWrite(lose_pin, HIGH);
+      gameOn = false;
+    }
+    else if (sensor_blue == LOW){
+      if(correct_wire == blue_wire) digitalWrite(win_pin, HIGH);
+      else digitalWrite(lose_pin, HIGH);
+      gameOn = false;
+    }
+    else {
+      digitalWrite(win_pin, LOW);
+      digitalWrite(lose_pin, LOW);
+    }
   }
-  else if (sensor_green == LOW){
-    if(correct_wire == green_wire) digitalWrite(A0, HIGH);
-    else digitalWrite(7, HIGH);
-  }
-  else if (sensor_blue == LOW){
-    if(correct_wire == blue_wire) digitalWrite(A0, HIGH);
-    else digitalWrite(7, HIGH);
-  }
-  else {
-    digitalWrite(A0, LOW);
-    digitalWrite(7, LOW);
+  else{
+    if(digitalRead(reset_pin) == HIGH) {
+      gameOn = true;
+      pickRandomWire();
+      morseActive = true;
+      morseIndex = 0;
+      lastMorseTime = millis();
+      delay(2000);
+    } 
   }
   delay(100);
 }
